@@ -3,9 +3,22 @@ import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import Banner from "../components/banner";
 import Card from "../components/card";
-import coffeeStores from "../data/coffee-stores.json";
+import { fetchCoffeStores } from "../lib/caffee-stores";
 
-export default function Home() {
+export async function getStaticProps(context){
+  //ideal case is : we fetch data here
+  const coffeeStores = await fetchCoffeStores()
+  
+
+
+  return {
+    props: {
+      coffeeStores
+    },
+  }
+}
+
+export default function Home(props) { 
   const handleOnBannerBtnClick = () => {
     console.log("banner Button");
   };
@@ -30,18 +43,20 @@ export default function Home() {
             width={700}
             height={400}
           />
+
+          {props.coffeeStores.length > 0 && (<><h2 className={styles.heading2}>Kecskemét stores</h2>
           <div className={styles.cardLayout}>
-            {coffeeStores.map((coffeeStore) => {
+            {props.coffeeStores.map((coffeeStore) => {
               return (
                 <Card
-                  key={coffeeStore.id}
+                  key={coffeeStore.fsq_id}
                   name={coffeeStore.name}
-                  imgUrl={coffeeStore.imgUrl}
-                  href={`/coffee-store/${coffeeStore.id}`}
+                  imgUrl={coffeeStore.imgUrl || "http://images.unsplash.com/photo-1498804103079-a6351b050096?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80"  }
+                  href={`/coffee-store/${coffeeStore.fsq_id}`}
                 />
               
               )})}
-          </div>
+          </div> </> )}
         </div>
       </main>
     </div>
