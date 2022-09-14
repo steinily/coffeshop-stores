@@ -4,23 +4,26 @@ import styles from "../../styles/coffee-stores.module.css";
 import Image from "next/future/image";
 import { fetchCoffeStores } from "../../lib/caffee-stores";
 import cls from "classnames";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { StoreContext } from "../_app";
 
-export async function  getStaticProps({ params }) {
+import { isEmpty } from "../../utils/index";
+export async function getStaticProps({ params }) {
   // const params = staticProps.params
-  const coffeeStores = await fetchCoffeStores()
+  const coffeeStores = await fetchCoffeStores();
   return {
     props: {
       coffeeStore:
-      coffeeStores.find((coffeeStore) => {
+        coffeeStores.find((coffeeStore) => {
           return coffeeStore.fsq_id.toString() === params.id;
         }) || {},
     },
   };
 }
 
-export async function  getStaticPaths() {
-  const coffeeStores = await fetchCoffeStores()
+export async function getStaticPaths() {
+  const coffeeStores = await fetchCoffeStores();
   const path = coffeeStores.map((coffeeStore) => {
     return {
       params: {
@@ -34,11 +37,30 @@ export async function  getStaticPaths() {
   };
 }
 
-const CoffeeStore = (props) => {
+const CoffeeStore = (initialProps) => {
+  const router = useRouter();
+  const [count, setCount] = useState(0);
+  const id = router.query.id;
+  const {
+    state: { coffeeStores },
+  } = useContext(StoreContext);
 
-    const [count,setCount]=useState(0)
+  const [coffeeStore, setCoffeeStore] = useState(
+    initialProps.coffeeStore || {}
+  );
 
-  if (Object.keys(props.coffeeStore).length === 0) {
+  useEffect(() => {
+    if (isEmpty(initialProps.coffeeStore)) {
+      if (coffeeStores.length > 0) {
+        const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
+          return coffeeStore.fsq_id.toString() === id;
+        });
+        setCoffeeStore(findCoffeeStoreById);
+      }
+    }
+  }, [coffeeStores,id,initialProps]);
+
+  if (Object.keys(initialProps.coffeeStore).length === 0) {
     return (
       <div>
         <h2>Record not found</h2>
@@ -49,13 +71,11 @@ const CoffeeStore = (props) => {
     );
   }
 
-  
   const handleUpvoteButton = () => {
-    setCount(count+1)
-  }
+    setCount(count + 1);
+  };
 
-  const { location, name, imgUrl } = props.coffeeStore;
-  
+  const { location, name, imgUrl } = coffeeStore;
 
   return (
     <div className={styles.layout}>
@@ -66,14 +86,14 @@ const CoffeeStore = (props) => {
         <div className={styles.col1}>
           <div className={styles.backToHomeLink}>
             <Link href="/">
-              <a> 🠐 Back to home</a>
+              <a> ⬅ Back to home</a>
             </Link>
           </div>
           <div className={styles.nameWrapper}>
-          <h1 className={styles.name}>{name}</h1>
+            <h1 className={styles.name}>{name}</h1>
           </div>
-  
-          <Image 
+
+          <Image
             src={imgUrl || "/static/coffee.jpg"}
             width={600}
             height={360}
@@ -81,22 +101,38 @@ const CoffeeStore = (props) => {
             alt={name}
           />
         </div>
-        <div className={cls("glass",styles.col2)}>
-            <div className={styles.iconWrapper}>
-                <Image src="/static/icons/places.svg" width="24" height="24" alt="places" />
+        <div className={cls("glass", styles.col2)}>
+          <div className={styles.iconWrapper}>
+            <Image
+              src="/static/icons/places.svg"
+              width="24"
+              height="24"
+              alt="places"
+            />
             <p className={styles.text}>{location.address}</p>
-            </div>
-            <div className={styles.iconWrapper}>
-                <Image src="/static/icons/nearMe.svg" width="24" height="24" alt="nearMe" />
-                <p className={styles.text}>{location.locality }</p>
-            </div>
-            <div className={styles.iconWrapper}>
-                <Image src="/static/icons/star.svg" width="24" height="24" alt="star"/>
-                <p className={styles.text}>{count}</p>
-            </div>
-          
-          <button className={styles.upvoteButton} onClick={handleUpvoteButton}>UpVote!</button>
-          
+          </div>
+          <div className={styles.iconWrapper}>
+            <Image
+              src="/static/icons/nearMe.svg"
+              width="24"
+              height="24"
+              alt="nearMe"
+            />
+            <p className={styles.text}>{location.locality}</p>
+          </div>
+          <div className={styles.iconWrapper}>
+            <Image
+              src="/static/icons/star.svg"
+              width="24"
+              height="24"
+              alt="star"
+            />
+            <p className={styles.text}>{count}</p>
+          </div>
+
+          <button className={styles.upvoteButton} onClick={handleUpvoteButton}>
+            UpVote!
+          </button>
         </div>
       </div>
     </div>
