@@ -5,12 +5,11 @@ import Image from "next/future/image";
 import { fetchCoffeStores } from "../../lib/caffee-stores";
 import cls from "classnames";
 import { useContext, useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { StoreContext } from "../_app";
+
 
 import { isEmpty } from "../../utils/index";
+import { StoreContext } from "../../store/store-context";
 export async function getStaticProps({ params }) {
-  // const params = staticProps.params
   const coffeeStores = await fetchCoffeStores();
   return {
     props: {
@@ -38,13 +37,12 @@ export async function getStaticPaths() {
 }
 
 const CoffeeStore = (initialProps) => {
-  const router = useRouter();
   const [count, setCount] = useState(0);
-  const id = router.query.id;
-  const {
-    state: { coffeeStores },
-  } = useContext(StoreContext);
-
+  
+  
+  const {state} = useContext(StoreContext);
+  const {coffeeStores} = state
+  console.log(coffeeStores)
   const [coffeeStore, setCoffeeStore] = useState(
     initialProps.coffeeStore || {}
   );
@@ -53,29 +51,18 @@ const CoffeeStore = (initialProps) => {
     if (isEmpty(initialProps.coffeeStore)) {
       if (coffeeStores.length > 0) {
         const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
-          return coffeeStore.fsq_id.toString() === id;
+          return coffeeStore.fsq_id.toString() ===  params.id;
         });
         setCoffeeStore(findCoffeeStoreById);
       }
     }
-  }, [coffeeStores,id,initialProps]);
-
-  if (Object.keys(initialProps.coffeeStore).length === 0) {
-    return (
-      <div>
-        <h2>Record not found</h2>
-        <Link href="/">
-          <a>Back to home</a>
-        </Link>
-      </div>
-    );
-  }
+  }, [ initialProps, initialProps.coffeeStore , coffeeStores]);
 
   const handleUpvoteButton = () => {
     setCount(count + 1);
   };
 
-  const { location, name, imgUrl } = coffeeStore;
+  const {name, imgUrl,location } = coffeeStore;
 
   return (
     <div className={styles.layout}>
@@ -109,7 +96,7 @@ const CoffeeStore = (initialProps) => {
               height="24"
               alt="places"
             />
-            <p className={styles.text}>{location.address}</p>
+           <p className={styles.text}>{location.address}</p>
           </div>
           <div className={styles.iconWrapper}>
             <Image

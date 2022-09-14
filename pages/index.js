@@ -6,7 +6,8 @@ import Card from "../components/card";
 import { fetchCoffeStores } from "../lib/caffee-stores";
 import useTrackLocation from "../hooks/use-track-location";
 import { useEffect, useState ,useContext} from "react";
-import { ACTION_TYPES , StoreContext} from "./_app";
+import { ACTION_TYPES, StoreContext } from "../store/store-context";
+
 
 export async function getStaticProps(context) {
   //ideal case is : we fetch data here
@@ -28,26 +29,29 @@ export default function Home(props) {
   const { dispatch ,state} = useContext(StoreContext);
   const {latLong,coffeeStores} = state
   const [coffeeStoresError , setCoffeeStoresError] = useState(null)
-  useEffect(() => {
+  
+  useEffect( () => {
     async function setCoffeeStoresByLocation() {
       if (latLong) {
         try {
-          const fetchedCoffeStores = await fetchCoffeStores(latLong);
-          //setCoffeeStores(fetchedCoffeStores);
+          const response = await fetch(`/api/getCoffeeStoresByLocation?latLong=${latLong}&limit=30`)
+          
+          const coffeeStores = await response.json()
           dispatch({
             type: ACTION_TYPES.SET_COFFEE_STORES,
             payload : {
-              coffeeStores: fetchedCoffeStores
+              coffeeStores: coffeeStores
             }
           })
           
+          setCoffeeStoresError("")
         } catch (error) {
-          setCoffeeStoresError(error);
+           setCoffeeStoresError(error);
         }
       }
     }
     setCoffeeStoresByLocation()
-  });
+  },[dispatch, latLong]);
   return (
     <div className={styles.container}>
       <Head>
