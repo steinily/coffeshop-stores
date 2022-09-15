@@ -3,7 +3,7 @@ import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import Banner from "../components/banner";
 import Card from "../components/card";
-import { fetchCoffeStores } from "../lib/caffee-stores";
+import { fetchCoffeeStores } from "../lib/caffee-stores";
 import useTrackLocation from "../hooks/use-track-location";
 import { useEffect, useState ,useContext} from "react";
 import { ACTION_TYPES, StoreContext } from "../store/store-context";
@@ -11,7 +11,7 @@ import { ACTION_TYPES, StoreContext } from "../store/store-context";
 
 export async function getStaticProps(context) {
   //ideal case is : we fetch data here
-  const coffeeStores = await fetchCoffeStores();
+  const coffeeStores = await fetchCoffeeStores();
 
   return {
     props: {
@@ -81,10 +81,10 @@ export default function Home(props) {
                 {coffeeStores.map((coffeeStore) => {
                   return (
                     <Card
-                      key={coffeeStore.fsq_id}
+                      key={coffeeStore.id}
                       name={coffeeStore.name}
                       imgUrl={coffeeStore.imgUrl || "/static/coffee.jpg"}
-                      href={`/coffee-store/${coffeeStore.fsq_id}`}
+                      href={`/coffee-store/${coffeeStore.id}`}
                     />
                   );
                 })}
@@ -99,10 +99,10 @@ export default function Home(props) {
                 {props.coffeeStores.map((coffeeStore) => {
                   return (
                     <Card
-                      key={coffeeStore.fsq_id}
+                      key={coffeeStore.id}
                       name={coffeeStore.name}
                       imgUrl={coffeeStore.imgUrl || "/static/coffee.jpg"}
-                      href={`/coffee-store/${coffeeStore.fsq_id}`}
+                      href={`/coffee-store/${coffeeStore.id}`}
                     />
                   );
                 })}

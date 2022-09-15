@@ -1,19 +1,25 @@
+import { useContext, useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import Head from "next/head";
-import styles from "../../styles/coffee-stores.module.css";
-import Image from "next/future/image";
-import { fetchCoffeStores } from "../../lib/caffee-stores";
-import cls from "classnames";
-import { useContext, useEffect, useState } from "react";
+import Image from "next/image";
 
-import { isEmpty } from "../../utils/index";
+
+import cls from "classnames";
+
+import styles from "../../styles/coffee-stores.module.css";
+import { fetchCoffeeStores } from "../../lib/caffee-stores";
+
 import { StoreContext } from "../../store/store-context";
-import { useRouter } from "next/router";
+
+import { isEmpty } from "../../utils";
+
 export async function getStaticProps(staticProps) {
   const params = staticProps.params;
-  const coffeeStores = await fetchCoffeStores();
+
+  const coffeeStores = await fetchCoffeeStores();
   const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
-    return coffeeStore.fsq_id.toString() === params.id;
+    return coffeeStore.id.toString() === params.id; //dynamic id
   });
   return {
     props: {
@@ -21,12 +27,13 @@ export async function getStaticProps(staticProps) {
     },
   };
 }
+
 export async function getStaticPaths() {
-  const coffeeStores = await fetchCoffeStores();
+  const coffeeStores = await fetchCoffeeStores();
   const paths = coffeeStores.map((coffeeStore) => {
     return {
       params: {
-        id: coffeeStore.fsq_id.toString(),
+        id: coffeeStore.id.toString(),
       },
     };
   });
@@ -38,16 +45,20 @@ export async function getStaticPaths() {
 
 const CoffeeStore = (initialProps) => {
   const router = useRouter();
-  const [count, setCount] = useState(0);
-
+const [count,setCount] =useState(0)
   const id = router.query.id;
-  const { state } = useContext(StoreContext);
-  const { coffeeStores } = state;
-   
 
-  const handleCreateCoffeStore = async (coffeeStore) => {
+  const [coffeeStore, setCoffeeStore] = useState(
+    initialProps.coffeeStore || {}
+  );
+
+  const {
+    state: { coffeeStores },
+  } = useContext(StoreContext);
+
+  const handleCreateCoffeeStore = async (coffeeStore) => {
     try {
-      const { id, name, address, locality, voting, imgUrl } = coffeeStore;
+      const { id, name, voting, imgUrl,locality , address } = coffeeStore;
       const response = await fetch("/api/createCoffeeStore", {
         method: "POST",
         headers: {
@@ -56,46 +67,50 @@ const CoffeeStore = (initialProps) => {
         body: JSON.stringify({
           id,
           name,
-          address: address || "",
-          locality: locality || "",
           voting: 0,
           imgUrl,
+        locality :locality  || "",
+          address: address || "",
         }),
       });
-      const dbCoffeeStore = response.json();
-      console.log({ dbCoffeeStore });
+
+      const dbCoffeeStore = await response.json();
     } catch (err) {
-      console.error("Error creating coffe store", err);
+      console.error("Error creating coffee store", err);
     }
   };
 
-  let store = 0
-  if (initialProps || initialProps=={}) {
-    if (coffeeStores.length > 0) {
-      console.log('itt vagyok')
-      const coffeeStoreFromContext = coffeeStores.filter(coffeeStore => {
-        return coffeeStore.fsq_id == id;
-      });
-      console.log(coffeeStoreFromContext)
-      if (coffeeStoreFromContext) {
-        handleCreateCoffeStore(coffeeStoreFromContext);
-         store = coffeeStoreFromContext
+  useEffect(() => {
+    if (isEmpty(initialProps.coffeeStore)) {
+      if (coffeeStores.length > 0) {
+        const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
+          return coffeeStore.id.toString() === id; //dynamic id
+        });
+        setCoffeeStore(findCoffeeStoreById);
+        handleCreateCoffeeStore(findCoffeeStoreById);
       }
-      
     } else {
-      handleCreateCoffeStore(initialProps.coffeeStore);
+      // SSG
+      handleCreateCoffeeStore(initialProps.coffeeStore);
     }
+  }, [id, initialProps.coffeeStore, coffeeStores]);
+
+  const {
+    name,
+    address,
+  locality,
+    imgUrl ,
+  } = coffeeStore;
+  
+  if (router.isFallback) {
+    return <div>Loading...</div>;
   }
+
   const handleUpvoteButton = () => {
-    setCount(count + 1);
+    setCount(count +1)
   };
 
-  const name = store[0].name
-  const imgUrl = 2
-  const address = 3
-  const locality = 4
 
-//debugger
   return (
     <div className={styles.layout}>
       <Head>
@@ -156,6 +171,7 @@ const CoffeeStore = (initialProps) => {
       </div>
     </div>
   );
+
 };
 
 export default CoffeeStore;

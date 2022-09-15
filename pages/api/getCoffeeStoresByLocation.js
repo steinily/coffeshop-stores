@@ -1,9 +1,9 @@
-import { fetchCoffeStores } from "../../lib/caffee-stores";
+import { fetchCoffeeStores } from "../../lib/caffee-stores";
 
 const getCoffeeStoresByLocation = async (req, res) => {
   try {
     const { latLong, limit } = req.query;
-    const response  = await fetchCoffeStores(latLong, limit);
+    const response  = await fetchCoffeeStores(latLong, limit);
     res.status(200)
     res.json(response)
   } catch (err) {
