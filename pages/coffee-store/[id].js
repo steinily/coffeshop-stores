@@ -9,18 +9,20 @@ import { useContext, useEffect, useState } from "react";
 
 import { isEmpty } from "../../utils/index";
 import { StoreContext } from "../../store/store-context";
-export async function getStaticProps({ params }) {
+import { useRouter } from "next/router";
+export async function getStaticProps(staticProps) {
+  
+  const params = staticProps.params
   const coffeeStores = await fetchCoffeStores();
+  const findCoffeeStoreById = coffeeStores.find((coffeeStore)=> {
+    return coffeeStore.fsq_id.toString() === params.id
+})
   return {
     props: {
-      coffeeStore:
-        coffeeStores.find((coffeeStore) => {
-          return coffeeStore.fsq_id.toString() === params.id;
-        }) || {},
+      coffeeStore: findCoffeeStoreById ? findCoffeeStoreById:{},
     },
-  };
+  }
 }
-
 export async function getStaticPaths() {
   const coffeeStores = await fetchCoffeStores();
   const path = coffeeStores.map((coffeeStore) => {
@@ -37,32 +39,71 @@ export async function getStaticPaths() {
 }
 
 const CoffeeStore = (initialProps) => {
+  const router = useRouter()
   const [count, setCount] = useState(0);
   
-  
+  const id = router.query.id;
   const {state} = useContext(StoreContext);
   const {coffeeStores} = state
-  console.log(coffeeStores)
   const [coffeeStore, setCoffeeStore] = useState(
     initialProps.coffeeStore || {}
   );
 
+  const handleCreateCoffeStore = async (coffeeStore) =>{
+    try{
+      const {
+        id,
+        name,
+        address,
+        locality,
+        voting,
+        imgUrl,
+      } = coffeeStore
+      const response = await fetch("/api/createCoffeeStore" ,{
+        method:'POST',
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+          id,
+        name,
+        address : address || "",
+        locality: locality || "",
+        voting: 0,
+        imgUrl,
+        })
+
+      })
+      const dbCoffeeStore = response.json()
+      console.log({dbCoffeeStore})
+    }catch(err){
+      console.error('Error creating coffe store' , err)
+    }
+  }
+
+
   useEffect(() => {
     if (isEmpty(initialProps.coffeeStore)) {
       if (coffeeStores.length > 0) {
-        const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
-          return coffeeStore.fsq_id.toString() ===  params.id;
+        const coffeeStoreFromContext = coffeeStores.find((coffeeStore) => {
+          return coffeeStore.fsq_id.toString() ===  id;
         });
-        setCoffeeStore(findCoffeeStoreById);
+        if(coffeeStoreFromContext){
+        setCoffeeStore(coffeeStoreFromContext);
+        handleCreateCoffeStore(coffeeStoreFromContext)}
+      }else{
+        handleCreateCoffeStore(initialProps.coffeeStore)
       }
     }
-  }, [ initialProps, initialProps.coffeeStore , coffeeStores]);
+  }, [ initialProps, initialProps.coffeeStore , coffeeStores,handleCreateCoffeStore]);
 
   const handleUpvoteButton = () => {
     setCount(count + 1);
   };
+ 
+  console.log(coffeeStore)
+const {location,name,imgUrl} = coffeeStore;
 
-  const {name, imgUrl,location } = coffeeStore;
 
   return (
     <div className={styles.layout}>
@@ -96,7 +137,7 @@ const CoffeeStore = (initialProps) => {
               height="24"
               alt="places"
             />
-           <p className={styles.text}>{location.address}</p>
+           <p className={styles.text}>{location}</p>
           </div>
           <div className={styles.iconWrapper}>
             <Image
@@ -105,7 +146,7 @@ const CoffeeStore = (initialProps) => {
               height="24"
               alt="nearMe"
             />
-            <p className={styles.text}>{location.locality}</p>
+            <p className={styles.text}>{location}</p>
           </div>
           <div className={styles.iconWrapper}>
             <Image
@@ -124,6 +165,7 @@ const CoffeeStore = (initialProps) => {
       </div>
     </div>
   );
+
 };
 
 export default CoffeeStore;
