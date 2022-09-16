@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import Head from "next/head";
 import Image from "next/image";
-
+import useSWR from "swr";
 
 import cls from "classnames";
 
@@ -12,7 +12,7 @@ import { fetchCoffeeStores } from "../../lib/caffee-stores";
 
 import { StoreContext } from "../../store/store-context";
 
-import { isEmpty } from "../../utils";
+import { fetcher, isEmpty } from "../../utils";
 
 export async function getStaticProps(staticProps) {
   const params = staticProps.params;
@@ -45,9 +45,9 @@ export async function getStaticPaths() {
 
 const CoffeeStore = (initialProps) => {
   const router = useRouter();
-const [count,setCount] =useState(0)
-  const id = router.query.id;
 
+  const id = router.query.id;
+ const [votingCount ,  setVotingCount] = useState(0)
   const [coffeeStore, setCoffeeStore] = useState(
     initialProps.coffeeStore || {}
   );
@@ -55,6 +55,17 @@ const [count,setCount] =useState(0)
   const {
     state: { coffeeStores },
   } = useContext(StoreContext);
+
+  
+  const {data,error} = useSWR(`/api/getCoffeeStoreById?id=${id}`, fetcher)
+
+  useEffect(() => {
+    if(data && data.length > 0){
+      setCoffeeStore(data[0]);
+      setVotingCount(data[0].voting)
+    }
+
+  },[data])
 
   const handleCreateCoffeeStore = async (coffeeStore) => {
     try {
@@ -107,9 +118,12 @@ const [count,setCount] =useState(0)
   }
 
   const handleUpvoteButton = () => {
-    setCount(count +1)
+    setVotingCount(votingCount +1)
   };
 
+  if(error){
+    return <div>Something went wrong retrieving coffee store page </div>
+  }
 
   return (
     <div className={styles.layout}>
@@ -161,7 +175,7 @@ const [count,setCount] =useState(0)
               height="24"
               alt="star"
             />
-            <p className={styles.text}>{count}</p>
+            <p className={styles.text}>{votingCount}</p>
           </div>
 
           <button className={styles.upvoteButton} onClick={handleUpvoteButton}>
